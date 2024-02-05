@@ -1,0 +1,8 @@
+certifi
+chardet
+idna
+python-slugify
+pytz
+requests
+text-unidecode
+urllib3
