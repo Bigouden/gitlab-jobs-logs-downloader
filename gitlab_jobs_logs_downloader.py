@@ -98,6 +98,7 @@ class GitlabJobsLogsDownloader:
         if project.status_code != 200:
             logging.error("UNKNOWN GITLAB PROJECT ID %s !", CI_PROJECT_ID)
             os._exit(1)
+        logging.debug("PROJECT=%s", project.json())
         return project
 
     def get_pipeline_jobs(self):
@@ -112,6 +113,7 @@ class GitlabJobsLogsDownloader:
                 self.project_name,
             )
             os._exit(1)
+        logging.debug("JOBS=%s", pipeline_jobs.json())
         return pipeline_jobs
 
     def download_pipeline_jobs_logs(self):

@@ -25,4 +25,3 @@ Gitlab Jobs Logs Downloader:
   extends: .standalone
   script:
     - /entrypoint.sh
-
