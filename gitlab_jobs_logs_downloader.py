@@ -89,7 +89,7 @@ class GitlabJobsLogsDownloader:
         self.project_name = self.project.json()["name"]
         logging.info("GITLAB_PROJECT_NAME=%s", self.project.json()["name"])
         self.pipeline_jobs = self.get_pipeline_jobs()
-        logging.info("RETRIEVING %s JOBS", len(self.pipeline_jobs.json()))
+        logging.info("RETRIEVING %s JOBS", len(self.pipeline_jobs))
         self.download_pipeline_jobs_logs()
 
     def get_project(self):
@@ -103,22 +103,48 @@ class GitlabJobsLogsDownloader:
 
     def get_pipeline_jobs(self):
         """Retrieve Gitlab Pipeline Jobs"""
-        pipeline_jobs = self.session.get(
+        url = (
             f"{CI_API_V4_URL}/projects/{CI_PROJECT_ID}/pipelines/{CI_PIPELINE_ID}/jobs"
         )
-        if pipeline_jobs.status_code != 200:
-            logging.error(
-                "UNKNOWN GITLAB PIPELINE ID %s FOR %s",
-                CI_PIPELINE_ID,
-                self.project_name,
-            )
-            os._exit(1)
-        logging.debug("JOBS=%s", pipeline_jobs.json())
-        return pipeline_jobs
+        pipeline_jobs = []
+        while True:
+            response = self.session.get(url)
+            if response.status_code != 200:
+                logging.error(
+                    "UNKNOWN GITLAB PIPELINE ID %s FOR %s",
+                    CI_PIPELINE_ID,
+                    self.project_name,
+                )
+                os._exit(1)
+            pipeline_jobs.extend(response.json())
+            link_header = response.headers.get("Link")
+            if link_header:
+                next_page_url = self.extract_next_page_url(link_header)
+                if next_page_url:
+                    url = next_page_url
+                else:
+                    break
+            else:
+                break
+        logging.debug("JOBS=%s", pipeline_jobs)
+        return sorted(pipeline_jobs, key=lambda x: x["id"])
+
+    @staticmethod
+    def extract_next_page_url(link_header):
+        """Extract Next Page URL"""
+        links = link_header.split(", ")
+        for link in links:
+            url, rel = link.split("; ")
+            url = url.strip("<>")
+            rel = rel.split("=")[1].strip('"')
+            if rel == "next":
+                return url
+        return None
 
     def download_pipeline_jobs_logs(self):
         """Download Gitlab Pipeline Jobs Logs"""
-        for job in self.pipeline_jobs.json():
+        for job in self.pipeline_jobs:
+            logging.debug("JOB=%s", job)
             job_id = job["id"]
             job_stage = job["stage"]
             job_name = job["name"]
