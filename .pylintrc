@@ -1,2 +1,5 @@
+[MAIN]
+max-line-length=150
+
 [MESSAGES CONTROL]
-disable=import-error
+disable=import-error,too-many-statements
