@@ -1,8 +1,10 @@
 certifi
 chardet
-idna
 python-slugify
 pytz
-requests
+idna>=3.7
+prometheus_client
+pytz
+requests>=2.32.0
 text-unidecode
-urllib3
+urllib3>=1.26.19
